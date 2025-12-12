@@ -164,6 +164,33 @@ client.on("messageCreate", async (message) => {
     await message.channel.send(text);
     console.log("✅ Messaggio di test Drops inviato.");
   }
+    if (message.content === "!forceping") {
+    const latest = {
+      title: "Campagna Twitch Drops FORZATA (TEST)",
+      url: "https://twitch.fishingplanet.com/?forced=1"
+    };
+
+    const channel = message.channel;
+
+    const text = [
+      "🎣 **Nuova campagna Twitch Drops per Fishing Planet! (FORZATA)**",
+      "",
+      `📢 **${latest.title}**`,
+      `🔗 Dettagli: ${latest.url}`,
+    ].join("\n");
+
+    const campaignId = latest.url;
+
+    if (campaignId !== lastNotifiedCampaignId) {
+      lastNotifiedCampaignId = campaignId;
+      await channel.send(`@everyone\n${text}`);
+      console.log("✅ Forceping: inviato con @everyone (prima volta).");
+    } else {
+      await channel.send("✅ Forceping: già notificato, niente @everyone.");
+      console.log("Forceping: già notificato.");
+    }
+  }
+
 });
 
 client.login(DISCORD_TOKEN);
@@ -177,5 +204,6 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
 
