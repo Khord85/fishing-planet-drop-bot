@@ -1,4 +1,6 @@
 require("dotenv").config();
+
+let lastNotifiedCampaignId = null;
 const { Client, GatewayIntentBits } = require("discord.js");
 const fetch = require("node-fetch");
 
@@ -112,8 +114,16 @@ async function checkForNewDrops() {
         "https://twitch.fishingplanet.com/",
       ].join("\n");
 
-      await channel.send(message);
-      console.log("✅ Notifica nuova campagna Drops inviata su Discord.");
+      const campaignId = latest.url;
+
+      if (campaignId !== lastNotifiedCampaignId) {
+        lastNotifiedCampaignId = campaignId;
+        await channel.send(`@everyone\n${message}`);
+        console.log("✅ Notifica nuova campagna Drops inviata su Discord (con @everyone).");
+      } else {
+        console.log("Campagna già notificata, niente @everyone.");
+      }
+
     } else {
       console.log("Nessuna nuova campagna rispetto all’ultimo controllo.");
     }
@@ -167,4 +177,5 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
