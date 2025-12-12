@@ -157,3 +157,14 @@ client.on("messageCreate", async (message) => {
 });
 
 client.login(DISCORD_TOKEN);
+// --- HTTP server fittizio per Render (mantiene il bot online) ---
+const http = require("http");
+
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Fishing Planet Drops Bot is running");
+}).listen(PORT, () => {
+  console.log(`HTTP server listening on port ${PORT}`);
+});
+
