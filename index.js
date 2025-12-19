@@ -32,6 +32,8 @@ async function fetchFishingPlanetDropCampaigns() {
   const res = await fetch(FORUM_NEWS_URL, {
     headers: {
       "User-Agent": "FishingPlanetDropsDiscordBot/1.0",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9,it;q=0.8",
     },
   });
 
@@ -43,43 +45,56 @@ async function fetchFishingPlanetDropCampaigns() {
 
   const html = await res.text();
 
-  // ✅ Prendiamo TUTTI i link <a>...</a>, anche se dentro ci sono <span> o altri tag
-  const regex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  // Debug utile: conferma che stiamo leggendo davvero la pagina giusta
+  console.log("URL finale:", res.url);
+  console.log("HTML length:", html.length);
 
   const campaigns = [];
-  let match;
+  const seen = new Set();
 
-  while ((match = regex.exec(html)) !== null) {
-    let url = match[1];
+  /**
+   * Prendiamo i link ai TOPIC e proviamo a recuperare un titolo da:
+   * - testo interno
+   * - title=""
+   * - aria-label=""
+   *
+   * Matcha sia /topic/.. sia %2Ftopic%2F.. (URL encoded)
+   */
+  const topicRegex =
+    /<a[^>]+href="([^"]*(?:\/topic\/|%2Ftopic%2F)[^"]+)"[^>]*(?:title="([^"]*)")?[^>]*(?:aria-label="([^"]*)")?[^>]*>([\s\S]*?)<\/a>/gi;
 
-    // ✅ Ripulisce il testo del link da eventuali tag HTML interni
-    let title = match[2]
+  let m;
+  while ((m = topicRegex.exec(html)) !== null) {
+    let url = m[1];
+
+    // normalizza URL relativo/strano
+    if (url.startsWith("/")) url = "https://forum.fishingplanet.com" + url;
+    if (url.startsWith("index.php")) url = "https://forum.fishingplanet.com/" + url;
+
+    // titolo: preferisci title/aria-label, altrimenti testo interno ripulito
+    let title = (m[2] || m[3] || m[4] || "")
       .replace(/<[^>]*>/g, "")
       .replace(/\s+/g, " ")
       .trim();
 
-    // ✅ Teniamo solo link che contengono "Drops" nel titolo
+    if (!title) continue;
+
+    // filtro drops
     if (!title.toLowerCase().includes("drops")) continue;
 
-    // Normalizza l'URL relativo
-    if (url.startsWith("/")) {
-      url = "https://forum.fishingplanet.com" + url;
-    } else if (url.startsWith("index.php")) {
-      url = "https://forum.fishingplanet.com/" + url;
-    }
+    // evita duplicati
+    if (seen.has(url)) continue;
+    seen.add(url);
 
-    // Evita duplicati
-    if (!campaigns.some((c) => c.url === url)) {
-      campaigns.push({ title, url });
-    }
+    campaigns.push({ title, url });
   }
 
-  // ✅ Log utile per capire cosa sta trovando davvero su Render
-  console.log(`Trovati ${campaigns.length} link con "Drops" nella pagina News.`);
+  console.log(`Trovati ${campaigns.length} topic con "Drops" nella pagina News.`);
   if (campaigns[0]) console.log("Esempio:", campaigns[0].title, campaigns[0].url);
 
   return campaigns;
 }
+
 
 
 /**
@@ -226,6 +241,7 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
 
 
