@@ -83,7 +83,15 @@ async function checkForNewDrops() {
       return;
     }
 
-    const latest = campaigns[0];
+    const latest = campaigns.find(c =>
+  c.title.toLowerCase().includes("twitch drops")
+);
+
+if (!latest) {
+  console.log("Nessuna campagna Twitch Drops trovata tra i topic.");
+  return;
+}
+
 
     console.log(`Ultima campagna trovata: ${latest.title}`);
 
@@ -204,6 +212,7 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
 
 
