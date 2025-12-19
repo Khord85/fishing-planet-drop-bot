@@ -43,15 +43,23 @@ async function fetchFishingPlanetDropCampaigns() {
 
   const html = await res.text();
 
-  // Cerchiamo link che contengono la parola "Drops"
-  const regex = /<a[^>]+href="([^"]+)"[^>]*>([^<]*Drops[^<]*)<\/a>/gi;
+  // ✅ Prendiamo TUTTI i link <a>...</a>, anche se dentro ci sono <span> o altri tag
+  const regex = /<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
 
   const campaigns = [];
   let match;
 
   while ((match = regex.exec(html)) !== null) {
     let url = match[1];
-    let title = match[2].replace(/\s+/g, " ").trim();
+
+    // ✅ Ripulisce il testo del link da eventuali tag HTML interni
+    let title = match[2]
+      .replace(/<[^>]*>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // ✅ Teniamo solo link che contengono "Drops" nel titolo
+    if (!title.toLowerCase().includes("drops")) continue;
 
     // Normalizza l'URL relativo
     if (url.startsWith("/")) {
@@ -66,8 +74,13 @@ async function fetchFishingPlanetDropCampaigns() {
     }
   }
 
+  // ✅ Log utile per capire cosa sta trovando davvero su Render
+  console.log(`Trovati ${campaigns.length} link con "Drops" nella pagina News.`);
+  if (campaigns[0]) console.log("Esempio:", campaigns[0].title, campaigns[0].url);
+
   return campaigns;
 }
+
 
 /**
  * Controlla se ci sono nuove campagne Twitch Drops e, se sì, avvisa su Discord.
@@ -212,6 +225,7 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
 
 
