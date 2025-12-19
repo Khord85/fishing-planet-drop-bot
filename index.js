@@ -60,19 +60,15 @@ async function fetchFishingPlanetDropCampaigns() {
    *
    * Matcha sia /topic/.. sia %2Ftopic%2F.. (URL encoded)
    */
-  const topicRegex =
-    /<a[^>]+href="([^"]*(?:\/topic\/|%2Ftopic%2F)[^"]+)"[^>]*(?:title="([^"]*)")?[^>]*(?:aria-label="([^"]*)")?[^>]*>([\s\S]*?)<\/a>/gi;
+    const topicRegex =
+    /<a[^>]+href=(["'])([^"']*(?:\/topic\/|index\.php\?\/topic\/|%2Ftopic%2F)[^"']+)\1[^>]*(?:title=(["'])(.*?)\3)?[^>]*(?:aria-label=(["'])(.*?)\5)?[^>]*>([\s\S]*?)<\/a>/gi;
 
   let m;
   while ((m = topicRegex.exec(html)) !== null) {
-    let url = m[1];
-
-    // normalizza URL relativo/strano
-    if (url.startsWith("/")) url = "https://forum.fishingplanet.com" + url;
-    if (url.startsWith("index.php")) url = "https://forum.fishingplanet.com/" + url;
+    let url = m[2];
 
     // titolo: preferisci title/aria-label, altrimenti testo interno ripulito
-    let title = (m[2] || m[3] || m[4] || "")
+    let title = (m[4] || m[6] || m[7] || "")
       .replace(/<[^>]*>/g, "")
       .replace(/\s+/g, " ")
       .trim();
@@ -82,12 +78,17 @@ async function fetchFishingPlanetDropCampaigns() {
     // filtro drops
     if (!title.toLowerCase().includes("drops")) continue;
 
+    // normalizza URL relativo
+    if (url.startsWith("/")) url = "https://forum.fishingplanet.com" + url;
+    if (url.startsWith("index.php")) url = "https://forum.fishingplanet.com/" + url;
+
     // evita duplicati
     if (seen.has(url)) continue;
     seen.add(url);
 
     campaigns.push({ title, url });
   }
+
 
   console.log(`Trovati ${campaigns.length} topic con "Drops" nella pagina News.`);
   if (campaigns[0]) console.log("Esempio:", campaigns[0].title, campaigns[0].url);
@@ -241,6 +242,7 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
 
 
