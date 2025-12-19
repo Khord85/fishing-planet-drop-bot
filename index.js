@@ -8,6 +8,9 @@ const fetch = require("node-fetch");
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.DISCORD_CHANNEL_ID;
 const CHECK_INTERVAL_MINUTES = parseInt(process.env.CHECK_INTERVAL_MINUTES || "15", 10);
+const NOTIFY_ON_START =
+  (process.env.NOTIFY_ON_START || "false").toLowerCase() === "true";
+
 
 // URL della sezione "News" del forum di Fishing Planet
 const FORUM_NEWS_URL =
@@ -126,10 +129,34 @@ if (!latest) {
     console.log(`Ultima campagna trovata: ${latest.title}`);
 
     if (lastDropTitle === null) {
-      lastDropTitle = latest.title;
-      console.log("Inizializzo lastDropTitle, nessuna notifica inviata.");
+  lastDropTitle = latest.title;
+
+  if (NOTIFY_ON_START) {
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    if (!channel) {
+      console.error("❌ Canale non trovato! Controlla DISCORD_CHANNEL_ID nel file .env");
       return;
     }
+
+    const message = [
+      "🎣 **Campagna Twitch Drops rilevata (avvio bot)**",
+      "",
+      `📢 **${latest.title}**`,
+      `🔗 Dettagli: ${latest.url}`,
+      "",
+      "Ricorda di collegare il tuo account di gioco a Twitch:",
+      "https://twitch.fishingplanet.com/",
+    ].join("\n");
+
+    await channel.send(message); // niente @everyone all’avvio
+    console.log("✅ Notifica inviata all’avvio (senza @everyone).");
+  } else {
+    console.log("Inizializzo lastDropTitle, nessuna notifica inviata.");
+  }
+
+  return;
+}
+
 
     if (latest.title !== lastDropTitle) {
       lastDropTitle = latest.title;
@@ -242,6 +269,7 @@ http.createServer((req, res) => {
 }).listen(PORT, () => {
   console.log(`HTTP server listening on port ${PORT}`);
 });
+
 
 
 
